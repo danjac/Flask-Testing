@@ -1,0 +1,690 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Flask-Testing &mdash; Flask-Testing v0.3 documentation</title>
+    <link rel="stylesheet" href="_static/flasky.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Flask-Testing v0.3 documentation" href="#" /> 
+  </head>
+  <body>
+  
+  
+  <div class=indexwrapper>
+  
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-flask-testing">
+<span id="flask-testing"></span><h1>Flask-Testing<a class="headerlink" href="#module-flask-testing" title="Permalink to this headline">¶</a></h1>
+<p>The <strong>Flask-Testing</strong> extension provides unit testing utilities for Flask.</p>
+<p>Source code and issue tracking at <a class="reference external" href="http://bitbucket.org/danjac/flask-testing">Bitbucket</a>.</p>
+<div class="section" id="installing-flask-testing">
+<h2>Installing Flask-Testing<a class="headerlink" href="#installing-flask-testing" title="Permalink to this headline">¶</a></h2>
+<p>Install with <strong>pip</strong> and <strong>easy_install</strong>:</p>
+<div class="highlight-python"><pre>pip install Flask-Testing</pre>
+</div>
+<p>or download the latest version from Bitbucket:</p>
+<div class="highlight-python"><pre>hg clone http://bitbucket.org/danjac/flask-testing
+
+cd flask-testing
+
+python setup.py develop</pre>
+</div>
+<p>If you are using <strong>virtualenv</strong>, it is assumed that you are installing <strong>Flask-Testing</strong>
+in the same virtualenv as your Flask application(s).</p>
+</div>
+<div class="section" id="writing-unit-tests">
+<h2>Writing unit tests<a class="headerlink" href="#writing-unit-tests" title="Permalink to this headline">¶</a></h2>
+<p>Simply subclass the <tt class="docutils literal"><span class="pre">TestCase</span></tt> class:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">flaskext.testing</span> <span class="kn">import</span> <span class="n">TestCase</span>
+
+<span class="k">class</span> <span class="nc">MyTest</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>You must specify the <tt class="docutils literal"><span class="pre">create_app</span></tt> method, which should return a Flask instance:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">flaskext.testing</span> <span class="kn">import</span> <span class="n">TestCase</span>
+
+<span class="k">class</span> <span class="nc">MyTest</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">create_app</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;TESTING&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="n">app</span>
+</pre></div>
+</div>
+<p>If you don&#8217;t define <tt class="docutils literal"><span class="pre">create_app</span></tt> a <tt class="docutils literal"><span class="pre">NotImplementedError</span></tt> will be raised.</p>
+</div>
+<div class="section" id="testing-json-responses">
+<h2>Testing JSON responses<a class="headerlink" href="#testing-json-responses" title="Permalink to this headline">¶</a></h2>
+<p>If you are testing a view that returns a JSON response, you can test the output using
+a special <tt class="docutils literal"><span class="pre">json</span></tt> attribute appended to the <tt class="docutils literal"><span class="pre">Response</span></tt> object:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@app.route</span><span class="p">(</span><span class="s">&quot;/ajax/&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">some_json</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">success</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">TestViews</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">test_some_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;/ajax/&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEquals</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">success</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="using-with-twill">
+<h2>Using with Twill<a class="headerlink" href="#using-with-twill" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="http://twill.idyll.org/">Twill</a> is a simple language for browing the Web through
+a command line interface.</p>
+<p><tt class="docutils literal"><span class="pre">Flask-Testing</span></tt> comes with a helper class for creating functional tests using Twill:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">test_something_with_twill</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+    <span class="k">with</span> <span class="n">Twill</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">3000</span><span class="p">)</span> <span class="k">as</span> <span class="n">t</span><span class="p">:</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">browser</span><span class="o">.</span><span class="n">go</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">url</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The older <tt class="docutils literal"><span class="pre">TwillTestCase</span></tt> has been deprecated.</p>
+</div>
+<div class="section" id="testing-with-sqlalchemy">
+<h2>Testing with SQLAlchemy<a class="headerlink" href="#testing-with-sqlalchemy" title="Permalink to this headline">¶</a></h2>
+<p>This covers a couple of points if you are using <strong>Flask-Testing</strong> with <a class="reference external" href="http://sqlalchemy.org">SQLAlchemy</a>. It is
+assumed that you are using the <a class="reference external" href="http://packages.python.org/Flask-SQLAlchemy/">Flask-SQLAlchemy</a> extension, but if not the examples should
+not be too difficult to adapt to your own particular setup.</p>
+<p>First, ensure you set the database URI to something other than your production database ! Second,
+it&#8217;s usually a good idea to create and drop your tables with each test run, to ensure clean tests:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">flaskext.testing</span> <span class="kn">import</span> <span class="n">TestCase</span>
+
+<span class="kn">from</span> <span class="nn">myapp</span> <span class="kn">import</span> <span class="n">create_app</span><span class="p">,</span> <span class="n">db</span>
+
+<span class="k">class</span> <span class="nc">MyTest</span><span class="p">(</span><span class="n">TestCase</span><span class="p">):</span>
+
+    <span class="n">SQLALCHEMY_DATABASE_URI</span> <span class="o">=</span> <span class="s">&quot;sqlite://&quot;</span>
+    <span class="n">TESTING</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="k">def</span> <span class="nf">create_app</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="c"># pass in test configuration</span>
+        <span class="k">return</span> <span class="n">create_app</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="n">db</span><span class="o">.</span><span class="n">create_all</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">drop_all</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Notice also that <tt class="docutils literal"><span class="pre">db.session.remove()</span></tt> is called at the end of each test, to ensure the SQLAlchemy
+session is properly removed and that a new session is started with each test run - this is a common
+&#8220;gotcha&#8221;.</p>
+<p>Another gotcha is that Flask-SQLAlchemy <strong>also</strong> removes the session instance at the end of every request (as
+should any threadsafe application using SQLAlchemy with <strong>scoped_session</strong>). Therefore the session
+is cleared along with any objects added to it every time you call <tt class="docutils literal"><span class="pre">client.get()</span></tt> or another client method.</p>
+<p>For example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">SomeTest</span><span class="p">(</span><span class="n">MyTest</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">test_something</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">()</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+        <span class="c"># this works</span>
+        <span class="k">assert</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">)</span>
+
+        <span class="c"># this raises an AssertionError</span>
+        <span class="k">assert</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span>
+</pre></div>
+</div>
+<p>You now have to re-add the &#8220;user&#8221; instance back to the session with <tt class="docutils literal"><span class="pre">db.session.add(user)</span></tt>, if you are going
+to make any further database operations on it.</p>
+<p>Also notice that for this example the SQLite in-memory database is used : while it is faster for tests,
+if you have database-specific code (e.g. for MySQL or PostgreSQL) it may not be applicable.</p>
+<p>You may also want to add a set of instances for your database inside of a <tt class="docutils literal"><span class="pre">setUp()</span></tt> once your database
+tables have been created. If you want to work with larger sets of data, look at <a class="reference external" href="http://farmdev.com/projects/fixture/index.html">Fixture</a> which includes
+support for SQLAlchemy.</p>
+</div>
+<div class="section" id="module-flaskext.testing">
+<span id="api"></span><h2>API<a class="headerlink" href="#module-flaskext.testing" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="flaskext.testing.TestCase">
+<em class="property">class </em><tt class="descclassname">flaskext.testing.</tt><tt class="descname">TestCase</tt><big>(</big><em>methodName='runTest'</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="flaskext.testing.TestCase.assert200">
+<tt class="descname">assert200</tt><big>(</big><em>response</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assert200" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if response status code is 200</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; Flask response</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assert400">
+<tt class="descname">assert400</tt><big>(</big><em>response</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assert400" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if response status code is 400</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Versionadded :</th><td class="field-body"><p class="first">0.2.5</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; Flask response</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assert401">
+<tt class="descname">assert401</tt><big>(</big><em>response</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assert401" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if response status code is 401</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Versionadded :</th><td class="field-body"><p class="first">0.2.1</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; Flask response</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assert403">
+<tt class="descname">assert403</tt><big>(</big><em>response</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assert403" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if response status code is 403</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Versionadded :</th><td class="field-body"><p class="first">0.2</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; Flask response</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assert404">
+<tt class="descname">assert404</tt><big>(</big><em>response</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assert404" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if response status code is 404</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; Flask response</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assert405">
+<tt class="descname">assert405</tt><big>(</big><em>response</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assert405" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if response status code is 405</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Versionadded :</th><td class="field-body"><p class="first">0.2</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; Flask response</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assertContext">
+<tt class="descname">assertContext</tt><big>(</big><em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assertContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if given name exists in the template context
+and equals the given value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Versionadded :</th><td class="field-body"><p class="first">0.2</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> &#8211; name of context variable</li>
+<li><strong>value</strong> &#8211; value to check against</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assertRedirects">
+<tt class="descname">assertRedirects</tt><big>(</big><em>response</em>, <em>location</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assertRedirects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if response is an HTTP redirect to the 
+given location.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; Flask response</li>
+<li><strong>location</strong> &#8211; relative URL (i.e. without <strong>http://localhost</strong>)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assertStatus">
+<tt class="descname">assertStatus</tt><big>(</big><em>response</em>, <em>status_code</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assertStatus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper method to check matching response status.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; Flask response</li>
+<li><strong>status_code</strong> &#8211; response status code (e.g. 200)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assertTemplateUsed">
+<tt class="descname">assertTemplateUsed</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assertTemplateUsed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a given template is used in the request. 
+Only works if your version of Flask has signals 
+support (0.6+) and blinker is installed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Versionadded :</th><td class="field-body"><p class="first">0.2</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> &#8211; template name</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assert_200">
+<tt class="descname">assert_200</tt><big>(</big><em>response</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assert_200" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if response status code is 200</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; Flask response</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assert_400">
+<tt class="descname">assert_400</tt><big>(</big><em>response</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assert_400" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if response status code is 400</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Versionadded :</th><td class="field-body"><p class="first">0.2.5</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; Flask response</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assert_401">
+<tt class="descname">assert_401</tt><big>(</big><em>response</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assert_401" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if response status code is 401</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Versionadded :</th><td class="field-body"><p class="first">0.2.1</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; Flask response</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assert_403">
+<tt class="descname">assert_403</tt><big>(</big><em>response</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assert_403" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if response status code is 403</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Versionadded :</th><td class="field-body"><p class="first">0.2</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; Flask response</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assert_404">
+<tt class="descname">assert_404</tt><big>(</big><em>response</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assert_404" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if response status code is 404</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; Flask response</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assert_405">
+<tt class="descname">assert_405</tt><big>(</big><em>response</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assert_405" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if response status code is 405</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Versionadded :</th><td class="field-body"><p class="first">0.2</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; Flask response</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assert_context">
+<tt class="descname">assert_context</tt><big>(</big><em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assert_context" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if given name exists in the template context
+and equals the given value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Versionadded :</th><td class="field-body"><p class="first">0.2</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> &#8211; name of context variable</li>
+<li><strong>value</strong> &#8211; value to check against</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assert_redirects">
+<tt class="descname">assert_redirects</tt><big>(</big><em>response</em>, <em>location</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assert_redirects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if response is an HTTP redirect to the 
+given location.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; Flask response</li>
+<li><strong>location</strong> &#8211; relative URL (i.e. without <strong>http://localhost</strong>)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assert_status">
+<tt class="descname">assert_status</tt><big>(</big><em>response</em>, <em>status_code</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assert_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper method to check matching response status.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> &#8211; Flask response</li>
+<li><strong>status_code</strong> &#8211; response status code (e.g. 200)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.assert_template_used">
+<tt class="descname">assert_template_used</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.assert_template_used" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a given template is used in the request. 
+Only works if your version of Flask has signals 
+support (0.6+) and blinker is installed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Versionadded :</th><td class="field-body"><p class="first">0.2</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> &#8211; template name</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.create_app">
+<tt class="descname">create_app</tt><big>(</big><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.create_app" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create your Flask app here, with any
+configuration you need.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="flaskext.testing.TestCase.get_context_variable">
+<tt class="descname">get_context_variable</tt><big>(</big><em>name</em><big>)</big><a class="headerlink" href="#flaskext.testing.TestCase.get_context_variable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a variable from the context passed to the 
+template. Only works if your version of Flask
+has signals support (0.6+) and blinker is installed.</p>
+<p>Raises a ContextVariableDoesNotExist exception if does
+not exist in context.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Versionadded :</th><td class="field-body"><p class="first">0.2</p>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> &#8211; name of variable</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="flaskext.testing.Twill">
+<em class="property">class </em><tt class="descclassname">flaskext.testing.</tt><tt class="descname">Twill</tt><big>(</big><em>app</em>, <em>host='127.0.0.1'</em>, <em>port=5000</em>, <em>scheme='http'</em><big>)</big><a class="headerlink" href="#flaskext.testing.Twill" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Versionadded :</th><td class="field-body">0.3</td>
+</tr>
+</tbody>
+</table>
+<p>Twill wrapper utility class.</p>
+<p>Creates a Twill <tt class="docutils literal"><span class="pre">browser</span></tt> instance and handles
+WSGI intercept.</p>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">t</span> <span class="o">=</span> <span class="n">Twill</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">t</span><span class="p">:</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">browser</span><span class="o">.</span><span class="n">go</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">)</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">url</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="flaskext.testing.Twill.url">
+<tt class="descname">url</tt><big>(</big><em>url</em><big>)</big><a class="headerlink" href="#flaskext.testing.Twill.url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes complete URL based on host, port and scheme
+Twill settings.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>url</strong> &#8211; relative URL</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="flaskext.testing.TwillTestCase">
+<em class="property">class </em><tt class="descclassname">flaskext.testing.</tt><tt class="descname">TwillTestCase</tt><big>(</big><em>methodName='runTest'</em><big>)</big><a class="headerlink" href="#flaskext.testing.TwillTestCase" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Deprecated :</th><td class="field-body">use Twill helper class instead.</td>
+</tr>
+</tbody>
+</table>
+<p>Creates a Twill <tt class="docutils literal"><span class="pre">browser</span></tt> instance and handles
+WSGI intercept.</p>
+<dl class="method">
+<dt id="flaskext.testing.TwillTestCase.make_twill_url">
+<tt class="descname">make_twill_url</tt><big>(</big><em>url</em><big>)</big><a class="headerlink" href="#flaskext.testing.TwillTestCase.make_twill_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes complete URL based on host, port and scheme
+Twill settings.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>url</strong> &#8211; relative URL</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+  
+
+  
+  </div>
+  
+
+  </body>
+</html>
